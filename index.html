@@ -72,7 +72,8 @@
     const startNetwork = (base) => {
         // Create initial nodes
         for (let i = 0; i < base + 1; i++) {
-            nodes.add({id: i.toString(), label: i.toString()});
+            const identifier = i.toString();
+            nodes.add({id: identifier, label: identifier, group: identifier.length});
         }
 
         // Create initial links
@@ -132,7 +133,8 @@
 
         inNeighbors.forEach((inNeighbor) => {
             // Add a new brother node if it does not exist
-            let brother = {id: conjunction(inNeighbor.id, node.id), label: conjunction(inNeighbor.id, node.id)};
+            const brotherId = conjunction(inNeighbor.id, node.id);
+            let brother = {id: brotherId, label: brotherId, group: brotherId.length};
             nodes.forEach((node) => {
                 if (node.id === brother.id) {
                     brother = node;
