@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Distributed Line Graph Visualization</title>
+    <title>DL Graph Visualizer</title>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
@@ -12,42 +12,35 @@
             padding: 0;
             margin: 0;
         }
-        #wrapper {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-        #remain {
-            flex-grow: 1;
-        }
         #viewer {
-            position: absolute;
             height: 100%;
             width: 100%;
-            border: 1px solid lightgray;
+        }
+        #controller {
+            border: 2px lightgray solid;
+            background-color: white;
+            padding: 1em;
+            margin: 1em;
+            max-width: 450px;
+            z-index: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
 <body>
+<div id="viewer"></div>
 
-<div id="wrapper">
-    <div id="upper">
-        <h1>Distributed Line Graph Visualization</h1>
-        <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
-        <h2>Reference</h2>
-        <p>Y. Zhang and L. Liu, “Distributed Line Graphs: A Universal Technique for Designing DHTs Based on Arbitrary Regular Graphs,” <i>IEEE Trans. Knowl. Data Eng.</i>, vol. 24, no. 9, pp. 1556–1569, Sep. 2012. <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">http://doi.org/10.1109/TKDE.2011.258</a></p>
-        <hr>
-        <div>
-            <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
-        </div>
-        <div>
-            <input id="reset" type="button" value="Reset">
-        </div>
+<div id="controller">
+    <h1>DL Graph Visualizer</h1>
+    <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
+    <p>Please refer <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">the original paper</a> for more information.</p>
+    <div>
+        <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
     </div>
-    <div id="remain">
-        <div id="viewer"></div>
+    <div>
+        <input id="reset" type="button" value="Reset">
     </div>
 </div>
 
