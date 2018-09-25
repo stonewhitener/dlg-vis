@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Distributed Line Graph Visualization</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .wrapper {
+            height: 100%;
+            width: 100%;
+        }
+        .upper {}
+        .remain {
+            width: 100%;
+            height: 100%;
+        }
+        .remain #container {
+            width: 100%;
+            height:100%;
+        }
+        #container {
+            border: 1px solid lightgray;
+        }
+    </style>
+</head>
+<body>
+
+<table class="wrapper">
+    <tr class="upper">
+        <td>
+            <h1>Distributed Line Graph Visualization</h1>
+            <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
+            <h2>Reference</h2>
+            <p>Y. Zhang and L. Liu, “Distributed Line Graphs: A Universal Technique for Designing DHTs Based on Arbitrary Regular Graphs,” <i>IEEE Trans. Knowl. Data Eng.</i>, vol. 24, no. 9, pp. 1556–1569, Sep. 2012. <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">http://doi.org/10.1109/TKDE.2011.258</a></p>
+            <p>Base: <input id="base" type="number" name="base" value="2" min="2" max="8"></p>
+            <p><input id="reset" type="button" value="Reset"></p>
+        </td>
+    </tr>
+    <tr class="remain">
+        <td>
+            <div id="container"></div>
+        </td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+    let nodes = new vis.DataSet();
+    let edges = new vis.DataSet();
+    let data = {
+        nodes: nodes,
+        edges: edges
+    };
+    let options = {};
+    let network;
+
+    const baseInput = document.getElementById('base');
+    const resetButton = document.getElementById('reset');
+    const container = document.getElementById('container');
+
+    const startNetwork = (base) => {
+        // Create initial nodes
+        for (let i = 0; i < base + 1; i++) {
+            nodes.add({id: generateUuid(), label: i.toString()});
+        }
+
+        // Create initial links
+        nodes.forEach((u) => {
+            nodes.forEach((v) => {
+                if (u.id !== v.id) {
+                    edges.add({from: u.id, to: v.id, arrows: 'to'})
+                }
+            })
+        });
+
+        // Create a network
+        network = new vis.Network(container, data, options);
+        network.addEventListener('doubleClick', (params) => {
+            for (let nodeId of params.nodes) {
+                distributedLineGraph(nodeId);
+            }
+        });
+    };
+
+    const resetNetwork = (base) => {
+        if (network !== null) {
+            network.destroy();
+            network = null;
+        }
+        nodes.clear();
+        edges.clear();
+        startNetwork(base);
+    };
+
+    const distributedLineGraph = (nodeId) => {
+        const node = nodes.get(nodeId);
+
+        edges.forEach((inEdge) => {
+            if (inEdge.to === node.id) {
+                const inNeighbor = nodes.get(inEdge.from);
+                const brother = {id: generateUuid(), label: conjunction(inNeighbor.label, node.label)};
+                nodes.add(brother);
+
+                edges.add({from: inNeighbor.id, to: brother.id, arrows: "to"});
+                edges.forEach((outEdge) => {
+                    if (outEdge.from === node.id) {
+                        const outNeighbor = nodes.get(outEdge.to);
+                        edges.add({from: brother.id, to: outNeighbor.id, arrows: "to"});
+                    }
+                })
+            }
+        });
+
+        edges.forEach((inEdge) => {
+            if (inEdge.to === node.id) {
+                edges.remove(inEdge.id)
+            }
+        });
+
+        edges.forEach((outEdge) => {
+            if (outEdge.from === node.id) {
+                edges.remove(outEdge.id)
+            }
+        });
+
+        nodes.remove(nodeId);
+    };
+
+    const conjunction = (labelX, labelY) => {
+        if (labelX.length < labelY.length) {
+            alert("Can not execute a DL iteration");
+            throw new Error("Can not execute a DL iteration");
+        }
+        return labelX[labelX.length - labelY.length] + labelY;
+    };
+
+    const generateUuid = () => {
+        let chars = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("");
+        for (let i = 0, len = chars.length; i < len; i++) {
+            switch (chars[i]) {
+                case "x":
+                    chars[i] = Math.floor(Math.random() * 16).toString(16);
+                    break;
+                case "y":
+                    chars[i] = (Math.floor(Math.random() * 4) + 8).toString(16);
+                    break;
+            }
+        }
+        return chars.join("");
+    };
+
+    baseInput.addEventListener('input', () => {
+        resetNetwork(parseInt(baseInput.value));
+    });
+
+    resetButton.addEventListener('click', () => {
+        resetNetwork(parseInt(baseInput.value));
+    });
+
+    startNetwork(parseInt(baseInput.value));
+</script>
+</body>
+</html>
