@@ -41,7 +41,7 @@
             <p>Y. Zhang and L. Liu, “Distributed Line Graphs: A Universal Technique for Designing DHTs Based on Arbitrary Regular Graphs,” <i>IEEE Trans. Knowl. Data Eng.</i>, vol. 24, no. 9, pp. 1556–1569, Sep. 2012. <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">http://doi.org/10.1109/TKDE.2011.258</a></p>
             <hr>
             <div>
-                <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="8"></label>
+                <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
             </div>
             <div>
                 <input id="reset" type="button" value="Reset">
@@ -62,7 +62,11 @@
         nodes: nodes,
         edges: edges
     };
-    let options = {};
+    let options = {
+        physics: {
+            solver: "forceAtlas2Based",
+        }
+    };
     let network;
 
     const baseInput = document.getElementById('base');
