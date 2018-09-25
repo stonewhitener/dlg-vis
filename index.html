@@ -67,7 +67,7 @@
     const startNetwork = (base) => {
         // Create initial nodes
         for (let i = 0; i < base + 1; i++) {
-            nodes.add({id: generateUuid(), label: i.toString()});
+            nodes.add({id: i.toString(), label: i.toString()});
         }
 
         // Create initial links
@@ -101,58 +101,98 @@
     const distributedLineGraph = (nodeId) => {
         const node = nodes.get(nodeId);
 
-        edges.forEach((inEdge) => {
-            if (inEdge.to === node.id) {
-                const inNeighbor = nodes.get(inEdge.from);
-                const brother = {id: generateUuid(), label: conjunction(inNeighbor.label, node.label)};
+        let inEdges = [];
+        let inNeighbors = [];
+        let outEdges = [];
+        let outNeighbors = [];
+        edges.forEach((edge) => {
+            if (edge.to === node.id) {
+                inEdges.push(edge);
+                inNeighbors.push(nodes.get(edge.from));
+            }
+            if (edge.from === node.id) {
+                outEdges.push(edge);
+                outNeighbors.push(nodes.get(edge.to));
+            }
+        });
+
+        // Check the specified node's condition
+        inNeighbors.concat(outNeighbors).forEach((neighbor) => {
+            if (!(node.id.length <= neighbor.id.length)) {
+                const msg = "Unable to apply a DL iteration to the specified node";
+                alert(msg);
+                throw new Error(msg);
+            }
+        });
+
+        inNeighbors.forEach((inNeighbor) => {
+            // Add a new brother node if it does not exist
+            let brother = {id: conjunction(inNeighbor.id, node.id), label: conjunction(inNeighbor.id, node.id)};
+            nodes.forEach((node) => {
+                if (node.id === brother.id) {
+                    brother = node;
+                }
+            });
+
+            let brotherInEdges = [];
+            let brotherOutEdges = [];
+            edges.forEach((edge) => {
+                if (edge.to === brother.id) {
+                    brotherInEdges.push(edge);
+                }
+                if (edge.from === brother.id) {
+                    brotherOutEdges.push(edge);
+                }
+            });
+
+            try {
                 nodes.add(brother);
+            } catch (e) {
+                // Reach here when a brother node already exists
+            }
 
-                edges.add({from: inNeighbor.id, to: brother.id, arrows: "to"});
-                edges.forEach((outEdge) => {
-                    if (outEdge.from === node.id) {
-                        const outNeighbor = nodes.get(outEdge.to);
-                        edges.add({from: brother.id, to: outNeighbor.id, arrows: "to"});
+            const inEdge = {from: inNeighbor.id, to: brother.id, arrows: "to"};
+
+            // Check existence of the brother node's `inEdge` except for any `id` attributes
+            let inEdgeExists = false;
+            brotherInEdges.forEach((brotherInEdge) => {
+                if (brotherInEdge.from === inEdge.from && brotherInEdge.to === inEdge.to) {
+                    inEdgeExists = true;
+                }
+            });
+            if (!inEdgeExists) {
+                edges.add(inEdge);
+            }
+
+            outNeighbors.forEach((outNeighbor) => {
+                const outEdge = {from: brother.id, to: outNeighbor.id, arrows: "to"};
+
+                // Check existence of the brother node's `outEdge` except for any `id` attributes
+                let outEdgeExists = false;
+                brotherOutEdges.forEach((brotherOutEdge) => {
+                    if (brotherOutEdge.from === outEdge.from && brotherOutEdge.to === outEdge.to) {
+                        outEdgeExists = true;
                     }
-                })
-            }
+                });
+                if (!outEdgeExists) {
+                    edges.add(outEdge);
+                }
+            });
         });
 
-        edges.forEach((inEdge) => {
-            if (inEdge.to === node.id) {
-                edges.remove(inEdge.id)
-            }
+        inEdges.forEach((inEdge) => {
+            edges.remove(inEdge.id);
         });
 
-        edges.forEach((outEdge) => {
-            if (outEdge.from === node.id) {
-                edges.remove(outEdge.id)
-            }
+        outEdges.forEach((outEdge) => {
+            edges.remove(outEdge.id);
         });
 
         nodes.remove(nodeId);
     };
 
-    const conjunction = (labelX, labelY) => {
-        if (labelX.length < labelY.length) {
-            alert("Can not execute a DL iteration");
-            throw new Error("Can not execute a DL iteration");
-        }
-        return labelX[labelX.length - labelY.length] + labelY;
-    };
-
-    const generateUuid = () => {
-        let chars = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("");
-        for (let i = 0, len = chars.length; i < len; i++) {
-            switch (chars[i]) {
-                case "x":
-                    chars[i] = Math.floor(Math.random() * 16).toString(16);
-                    break;
-                case "y":
-                    chars[i] = (Math.floor(Math.random() * 4) + 8).toString(16);
-                    break;
-            }
-        }
-        return chars.join("");
+    const conjunction = (idX, idY) => {
+        return idX[idX.length - idY.length] + idY;
     };
 
     baseInput.addEventListener('input', () => {
