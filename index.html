@@ -21,7 +21,7 @@
             background-color: white;
             padding: 1em;
             margin: 1em;
-            max-width: 450px;
+            max-width: 420px;
             z-index: 1;
             position: fixed;
             top: 0;
@@ -35,11 +35,9 @@
 <div id="controller">
     <h1>DL Graph Visualizer</h1>
     <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
-    <p>Please refer <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">the original paper</a> for more information.</p>
-    <div>
-        <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
-    </div>
-    <div>
+    <label for="base">Base</label>
+    <input id="base" type="number" name="base" value="2" min="2" max="15">
+    <div style="float: right">
         <input id="reset" type="button" value="Reset">
     </div>
 </div>
@@ -65,7 +63,7 @@
     const startNetwork = (base) => {
         // Create initial nodes
         for (let i = 0; i < base + 1; i++) {
-            const identifier = i.toString();
+            const identifier = i.toString(16);
             nodes.add({id: identifier, label: identifier, group: identifier.length});
         }
 
