@@ -9,51 +9,47 @@
     <style type="text/css">
         html, body {
             height: 100%;
-            margin: 0;
             padding: 0;
+            margin: 0;
         }
-        .wrapper {
+        #wrapper {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        #remain {
+            flex-grow: 1;
+        }
+        #viewer {
+            position: absolute;
             height: 100%;
             width: 100%;
-        }
-        .upper {}
-        .remain {
-            width: 100%;
-            height: 100%;
-        }
-        .remain #container {
-            width: 100%;
-            height:100%;
-        }
-        #container {
             border: 1px solid lightgray;
         }
     </style>
 </head>
 <body>
 
-<table class="wrapper">
-    <tr class="upper">
-        <td>
-            <h1>Distributed Line Graph Visualization</h1>
-            <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
-            <h2>Reference</h2>
-            <p>Y. Zhang and L. Liu, “Distributed Line Graphs: A Universal Technique for Designing DHTs Based on Arbitrary Regular Graphs,” <i>IEEE Trans. Knowl. Data Eng.</i>, vol. 24, no. 9, pp. 1556–1569, Sep. 2012. <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">http://doi.org/10.1109/TKDE.2011.258</a></p>
-            <hr>
-            <div>
-                <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
-            </div>
-            <div>
-                <input id="reset" type="button" value="Reset">
-            </div>
-        </td>
-    </tr>
-    <tr class="remain">
-        <td>
-            <div id="container"></div>
-        </td>
-    </tr>
-</table>
+<div id="wrapper">
+    <div id="upper">
+        <h1>Distributed Line Graph Visualization</h1>
+        <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
+        <h2>Reference</h2>
+        <p>Y. Zhang and L. Liu, “Distributed Line Graphs: A Universal Technique for Designing DHTs Based on Arbitrary Regular Graphs,” <i>IEEE Trans. Knowl. Data Eng.</i>, vol. 24, no. 9, pp. 1556–1569, Sep. 2012. <a href="http://doi.org/10.1109/TKDE.2011.258" target="_blank">http://doi.org/10.1109/TKDE.2011.258</a></p>
+        <hr>
+        <div>
+            <label for="base">Base: <input id="base" type="number" name="base" value="2" min="2" max="5"></label>
+        </div>
+        <div>
+            <input id="reset" type="button" value="Reset">
+        </div>
+    </div>
+    <div id="remain">
+        <div id="viewer"></div>
+    </div>
+</div>
 
 <script type="text/javascript">
     let nodes = new vis.DataSet();
@@ -71,7 +67,7 @@
 
     const baseInput = document.getElementById('base');
     const resetButton = document.getElementById('reset');
-    const container = document.getElementById('container');
+    const container = document.getElementById('viewer');
 
     const startNetwork = (base) => {
         // Create initial nodes
