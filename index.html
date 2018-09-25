@@ -22,7 +22,7 @@
             background-color: white;
             padding: 1em;
             margin: 1em;
-            max-width: 420px;
+            max-width: 350px;
             z-index: 1;
             position: fixed;
             top: 0;
@@ -35,7 +35,7 @@
 
 <div id="controller">
     <h1>DL Graph Visualizer</h1>
-    <p>Chose a base number of an initial complete graph, then double click a node to apply a DL iteration.</p>
+    <p>Double click a node to apply a DL iteration.</p>
     <label for="base">Base</label>
     <input id="base" type="number" name="base" value="2" min="2" max="15">
     <div style="float: right">
@@ -115,13 +115,13 @@
         });
 
         // Check the specified node's condition
-        inNeighbors.concat(outNeighbors).forEach((neighbor) => {
+        for (let neighbor of inNeighbors.concat(outNeighbors)) {
             if (!(node.id.length <= neighbor.id.length)) {
                 const msg = "Unable to apply a DL iteration to the specified node";
                 alert(msg);
-                throw new Error(msg);
+                return;
             }
-        });
+        }
 
         inNeighbors.forEach((inNeighbor) => {
             // Add a new brother node if it does not exist
