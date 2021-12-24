@@ -1,208 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>DL Graph Visualizer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
-    <style type="text/css">
-        html, body {
-            height: 100%;
-            padding: 0;
-            margin: 0;
-        }
-        #viewer {
-            height: 100%;
-            width: 100%;
-        }
-        #controller {
-            border: 2px lightgray solid;
-            background-color: white;
-            padding: 1em;
-            margin: 1em;
-            max-width: 350px;
-            z-index: 1;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-    </style>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <title>Distributed Line Graph Visualizer</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <style type="text/css">
+            html, body {
+                height: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            #viewer {
+                height: 100%;
+                width: 100%;
+            }
+            
+            #controller {
+                border: 1px lightgray solid;
+                background-color: rgba(255, 255, 255, 0.8);
+                padding: 1em;
+                margin: 1em;
+                max-width: 16em;
+                z-index: 1;
+                position: fixed;
+                top: 0;
+                left: 0;
+            }
+
+            #reset {
+                float: right;
+            }
+        </style>
+    </head>
 <body>
-<div id="viewer"></div>
-
-<div id="controller">
-    <h1>DL Graph Visualizer</h1>
-    <p>Double click a node to apply a DL iteration.</p>
-    <label for="base">Base</label>
-    <input id="base" type="number" name="base" value="2" min="2" max="15">
-    <div style="float: right">
-        <input id="reset" type="button" value="Reset">
+    <div id="viewer"></div>
+    <div id="controller">
+        <h1>DLG Vis</h1>
+        <p>Double click a node to apply a DL iteration.</p>
+        <div>
+            <label for="base">Base</label>
+            <input id="base" type="number" name="base" value="2" min="2" max="15">
+            <div id="reset">
+                <input id="reset-button" type="button" value="Reset">
+            </div>
+        </div>
     </div>
-</div>
+    <script type="text/javascript">
+        const baseInput = document.getElementById('base');
+        const resetButton = document.getElementById('reset-button');
 
-<script type="text/javascript">
-    let nodes = new vis.DataSet();
-    let edges = new vis.DataSet();
-    let data = {
-        nodes: nodes,
-        edges: edges
-    };
-    let options = {
-        physics: {
-            solver: "forceAtlas2Based",
-        }
-    };
-    let network;
-
-    const baseInput = document.getElementById('base');
-    const resetButton = document.getElementById('reset');
-    const container = document.getElementById('viewer');
-
-    const startNetwork = (base) => {
-        // Create initial nodes
-        for (let i = 0; i < base + 1; i++) {
-            const identifier = i.toString(16);
-            nodes.add({id: identifier, label: identifier, group: identifier.length});
-        }
-
-        // Create initial links
-        nodes.forEach((u) => {
-            nodes.forEach((v) => {
-                if (u.id !== v.id) {
-                    edges.add({from: u.id, to: v.id, arrows: 'to'})
-                }
-            })
+        baseInput.addEventListener('input', () => {
+            recreateNetwork(parseInt(baseInput.value));
         });
 
-        // Create a network
-        network = new vis.Network(container, data, options);
-        network.addEventListener('doubleClick', (params) => {
-            for (let nodeId of params.nodes) {
-                distributedLineGraph(nodeId);
-            }
+        resetButton.addEventListener('click', () => {
+            recreateNetwork(parseInt(baseInput.value));
         });
-    };
+        
+        let network;
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
 
-    const resetNetwork = (base) => {
-        if (network !== null) {
-            network.destroy();
-            network = null;
-        }
-        nodes.clear();
-        edges.clear();
-        startNetwork(base);
-    };
-
-    const distributedLineGraph = (nodeId) => {
-        const node = nodes.get(nodeId);
-
-        let inEdges = [];
-        let inNeighbors = [];
-        let outEdges = [];
-        let outNeighbors = [];
-        edges.forEach((edge) => {
-            if (edge.to === node.id) {
-                inEdges.push(edge);
-                inNeighbors.push(nodes.get(edge.from));
-            }
-            if (edge.from === node.id) {
-                outEdges.push(edge);
-                outNeighbors.push(nodes.get(edge.to));
-            }
-        });
-
-        // Check the specified node's condition
-        for (let neighbor of inNeighbors.concat(outNeighbors)) {
-            if (!(node.id.length <= neighbor.id.length)) {
-                const msg = "Unable to apply a DL iteration to the specified node";
-                alert(msg);
-                return;
-            }
-        }
-
-        inNeighbors.forEach((inNeighbor) => {
-            // Add a new brother node if it does not exist
-            const brotherId = conjunction(inNeighbor.id, node.id);
-            let brother = {id: brotherId, label: brotherId, group: brotherId.length};
-            nodes.forEach((node) => {
-                if (node.id === brother.id) {
-                    brother = node;
-                }
-            });
-
-            let brotherInEdges = [];
-            let brotherOutEdges = [];
-            edges.forEach((edge) => {
-                if (edge.to === brother.id) {
-                    brotherInEdges.push(edge);
-                }
-                if (edge.from === brother.id) {
-                    brotherOutEdges.push(edge);
-                }
-            });
-
-            try {
-                nodes.add(brother);
-            } catch (e) {
-                // Reach here when a brother node already exists
-            }
-
-            const inEdge = {from: inNeighbor.id, to: brother.id, arrows: "to"};
-
-            // Check existence of the brother node's `inEdge` except for any `id` attributes
-            let inEdgeExists = false;
-            brotherInEdges.forEach((brotherInEdge) => {
-                if (brotherInEdge.from === inEdge.from && brotherInEdge.to === inEdge.to) {
-                    inEdgeExists = true;
-                }
-            });
-            if (!inEdgeExists) {
-                edges.add(inEdge);
-            }
-
-            outNeighbors.forEach((outNeighbor) => {
-                const outEdge = {from: brother.id, to: outNeighbor.id, arrows: "to"};
-
-                // Check existence of the brother node's `outEdge` except for any `id` attributes
-                let outEdgeExists = false;
-                brotherOutEdges.forEach((brotherOutEdge) => {
-                    if (brotherOutEdge.from === outEdge.from && brotherOutEdge.to === outEdge.to) {
-                        outEdgeExists = true;
-                    }
+        const conjunction = (idx, idy) => {
+            return idx[idx.length - idy.length] + idy;
+        };
+        
+        const createNetwork = (base) => {
+            // Create initial nodes
+            for (let i = 0; i < base + 1; i++) {
+                const nodeId = i.toString(16).toLocaleUpperCase();
+                nodes.add({
+                    id: nodeId,
+                    label: nodeId, 
+                    group: nodeId.length,
                 });
-                if (!outEdgeExists) {
-                    edges.add(outEdge);
+            }
+
+            // Create initial links
+            nodes.forEach((u) => {
+                nodes.forEach((v) => {
+                    if (u.id !== v.id) {
+                        edges.add({
+                            from: u.id, 
+                            to: v.id, 
+                            arrows: 'to',
+                        });
+                    }
+                })
+            });
+
+            // Create an initial network
+            const container = document.getElementById('viewer');
+
+            const data = {
+                nodes: nodes,
+                edges: edges,
+            };
+
+            const options = {
+                physics: {
+                    solver: 'forceAtlas2Based',
+                }
+            };
+            
+            network = new vis.Network(container, data, options);
+            
+            // Add the event listener to apply a ditributed line iteration
+            network.addEventListener('doubleClick', (params) => {
+                for (const nodeId of params.nodes) {
+                    distributedLineIteration(nodeId);
                 }
             });
-        });
+        };
 
-        inEdges.forEach((inEdge) => {
-            edges.remove(inEdge.id);
-        });
+        const destroyNetwork = () => {
+            nodes.clear();
+            edges.clear();
+            network.destroy();
+        }
 
-        outEdges.forEach((outEdge) => {
-            edges.remove(outEdge.id);
-        });
+        const recreateNetwork = (base) => {
+            destroyNetwork();
+            createNetwork(base);
+        };
 
-        nodes.remove(nodeId);
-    };
+        const distributedLineIteration = (nodeId) => {
+            const node = nodes.get(nodeId);
 
-    const conjunction = (idX, idY) => {
-        return idX[idX.length - idY.length] + idY;
-    };
+            // Construct {in, out}-{edges, neighbors}
+            const inEdgeIds = network.getConnectedEdges(nodeId, 'from');
+            const inNeighborIds = network.getConnectedNodes(nodeId, 'from');
+            const outEdgeIds = network.getConnectedEdges(nodeId, 'to');
+            const outNeighborIds = network.getConnectedNodes(nodeId, 'to');
 
-    baseInput.addEventListener('input', () => {
-        resetNetwork(parseInt(baseInput.value));
-    });
+            // Check wheather a DL iteration can be applied on the specified node's
+            for (const neighborId of inNeighborIds.concat(outNeighborIds)) {
+                if (!(nodeId.length <= neighborId.length)) {
+                    const errorMsg = `Unable to apply a DL iteration on the node ${nodeId}.`;
+                    alert(errorMsg);
+                    return;
+                }
+            }
 
-    resetButton.addEventListener('click', () => {
-        resetNetwork(parseInt(baseInput.value));
-    });
+            // Construct a network after the DL iteration
+            for (const inNeighborId of inNeighborIds) {
+                const brotherId = conjunction(inNeighborId, nodeId);
 
-    startNetwork(parseInt(baseInput.value));
-</script>
-</body>
+                // Add a new brother node to the network if it does not exist
+                let brother = nodes.get(brotherId);
+
+                let brotherInEdgeIds = [];
+                let brotherOutEdgeIds = [];
+
+                if (brother) {
+                    // Construct the brother's {in, out}-edges
+                    brotherInEdgeIds = network.getConnectedEdges(brotherId, 'from');
+                    brotherOutEdgeIds = network.getConnectedEdges(brotherId, 'to');
+                } else {
+                    brother = {
+                        id: brotherId, 
+                        label: brotherId, 
+                        group: brotherId.length
+                    };
+
+                    nodes.add(brother);
+                }
+
+                // Caluculate a new in-edge of the brother node
+                const inEdge = {
+                    from: inNeighborId, 
+                    to: brotherId, 
+                    arrows: "to"
+                };
+
+                // Add the in-edge if it does not exist in the network
+                if (!brotherInEdgeIds.some(brotherInEdgeId => {
+                    const brotherInEdge = edges.get(brotherInEdgeId);
+                    return brotherInEdge.from === inEdge.from && brotherInEdge.to === inEdge.to;
+                })) {
+                    edges.add(inEdge);
+                }
+
+                for (outNeighborId of outNeighborIds) {
+                    // Caluculate a new out-edge of the brother node
+                    const outEdge = {
+                        from: brotherId, 
+                        to: outNeighborId, 
+                        arrows: "to"
+                    };
+
+                    // Add the out-edge if it does not exist in the network
+                    if (!brotherOutEdgeIds.some(brotherOutEdgeId => {
+                        const brotherOutEdge = edges.get(brotherOutEdgeId);
+                        return brotherOutEdge.from === outEdge.from && brotherOutEdge.to === outEdge.to;
+                    })) {
+                        edges.add(outEdge);
+                    }
+                };
+            };
+
+            for (edgeId of inEdgeIds.concat(outEdgeIds)) {
+                edges.remove(edgeId);
+            }
+
+            nodes.remove(nodeId);
+        };
+    
+        createNetwork(parseInt(baseInput.value));
+    </script>
+    </body>
 </html>
